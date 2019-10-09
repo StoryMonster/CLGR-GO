@@ -45,8 +45,10 @@ func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err err
 				index := strings.Index(filename, keyword)
 				if index < 0 { continue }
 				if fs.MatchWholeWord {
-					if index - 1 >= 0 && !strings.ContainsRune(filename, rune(filename[index-1])) { continue }
-					if index + 1 < len(filename) && !strings.ContainsRune(filename, rune(filename[index+1])) { continue }
+					leftIndex := index - 1
+					rightIndex := index + len(keyword)
+				    if leftIndex >= 0 && !strings.ContainsRune(SPLITE_CHARACTORS, rune(filename[leftIndex])) { continue }
+					if rightIndex < len(filename) && !strings.ContainsRune(SPLITE_CHARACTORS, rune(filename[rightIndex])) { continue }
 				}
 				isFound = true
 				break

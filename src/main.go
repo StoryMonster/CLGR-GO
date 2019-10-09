@@ -2,16 +2,14 @@ package main
 
 import (
 	"./search"
-	"fmt"
 )
 
 func main() {
-	/*
 	destDirs := []string {"D:/projects", "D:/chunk_server_pc_mobile"}
 	destFiles := []string {"main"}
 	targetKeywords := []string {"int", "main"}
-	ignoreCase := false
-	matchWholeWord := false
+	ignoreCase := true
+	matchWholeWord := true
 	useRegularMatch := false
 	ignoreFolderName := true
 
@@ -25,18 +23,4 @@ func main() {
 	cs.SetDestinationFiles(destFiles)
 
 	cs.Search()
-	*/
-	destDirs := []string {"D:/projects"}
-	destFiles := []string {"main"}
-	//targetKeywords := []string {"int", "main"}
-	ignoreCase := false
-	matchWholeWord := true
-	useRegularMatch := false
-	ignoreFolderName := true
-
-	fs := search.NewFileSearcher(ignoreCase, matchWholeWord, useRegularMatch, ignoreFolderName, destDirs[0])
-	matchedFiles, _ := fs.Search(destFiles)
-	for _, filename := range matchedFiles {
-		fmt.Println(filename)
-	}
 }
