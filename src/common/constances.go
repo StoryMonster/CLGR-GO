@@ -1,4 +1,4 @@
-package search
+package common
 
 var SPLITE_CHARACTORS = " -+_\\/><*&^%$#!@~`?[]{}()=|:;,."
 

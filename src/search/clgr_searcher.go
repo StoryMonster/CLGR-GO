@@ -2,6 +2,7 @@ package search
 
 import (
 	"fmt"
+	"../output"
 )
 
 type ClgrSearcher struct {
@@ -12,6 +13,7 @@ type ClgrSearcher struct {
 	DestDirs []string               // 搜索路径集合，路径必须完全正确
 	DestFiles []string              // 文件名关键字集合
 	TargetKeywords []string         // 仅用于文本搜索，作为文本搜索关键字集合
+	op *output.Output
 }
 
 type TextSearchOptions struct {
@@ -21,8 +23,8 @@ type TextSearchOptions struct {
 	DestFileName string     // 待搜索文件名
 }
 
-func NewClgrSearcher()(*ClgrSearcher, error) {
-	return &ClgrSearcher{false, false, false, false, make([]string, 0), make([]string, 0), make([]string, 0)}, nil
+func NewClgrSearcher(op *output.Output)(*ClgrSearcher, error) {
+	return &ClgrSearcher{false, false, false, false, make([]string, 0), make([]string, 0), make([]string, 0), op}, nil
 }
 
 func (cs *ClgrSearcher)Search() {
@@ -39,15 +41,15 @@ func (cs *ClgrSearcher)searchFiles() {
 		fs := NewFileSearcher(cs.IgnoreCase, cs.MatchWholeWord, cs.UseRegularMatch, cs.IgnoreFolderName, dir)
 		filenames, err := fs.Search(cs.DestFiles)
 		if err != nil {
-			fmt.Println(err.Error())
+			cs.op.ERROR(err.Error())
 			continue
 		}
 		if len(filenames) == 0 {
-			fmt.Println(fmt.Sprintf("[WARN] No files found under %s", dir))
+			cs.op.WARN(fmt.Sprintf("No files found under %s", dir))
 			continue
 		}
 		for _, filename := range filenames {
-			fmt.Println(filename)
+			cs.op.AddFileSearchResult(filename)
 		}
 	}
 }
@@ -57,38 +59,34 @@ func (cs *ClgrSearcher)searchTexts() {
 		fs := NewFileSearcher(true, false, cs.UseRegularMatch, cs.IgnoreFolderName, dir)  // 文本搜索时，文件名匹配不考虑大小写以及全字匹配
 		filenames, err := fs.Search(cs.DestFiles)
 		if err != nil {
-			fmt.Println(err.Error())
+			cs.op.ERROR(err.Error())
 			continue
 		}
 		if len(filenames) == 0 {
-			fmt.Println(fmt.Sprintf("[WARN] No files found under %s", dir))
+			cs.op.WARN(fmt.Sprintf("No files found under %s", dir))
 			continue
 		}
 		for _, filename := range filenames {
 			if IsTextFile(filename) {
 				ts := NewTextSearcher(cs.IgnoreCase, cs.MatchWholeWord, cs.UseRegularMatch, filename)
-			    go searchTextsInFile(ts, cs.TargetKeywords)
+			    go cs.searchTextsInFile(ts, cs.TargetKeywords)
 			} else {
-				fmt.Println(fmt.Sprintf("[WARN] %s is a binary file", filename))
+				cs.op.WARN(fmt.Sprintf("%s is a binary file", filename))
 			}
 		}
 	}
 }
 
-func searchTextsInFile(ts *TextSearcher, keywords []string) {
+func (cs *ClgrSearcher)searchTextsInFile(ts *TextSearcher, keywords []string) {
 	matchedLines, err := ts.Search(keywords)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("[WARN] %s", err.Error()))
+		cs.op.ERROR(fmt.Sprintf("%s", err.Error()))
 		return
 	}
 	if len(matchedLines) == 0 {
 		return
 	}
-	res := fmt.Sprintf(">>>%s:\n", ts.DestFileName)
-	for _, line := range matchedLines {
-		res += fmt.Sprintf("%d: %s\n", line.Num, line.Line)
-	}
-	fmt.Println(res)
+	cs.op.AddTextSearchResult(ts.DestFileName, matchedLines)
 }
 
 func (cs *ClgrSearcher)SetIgnoreCase(val bool) {

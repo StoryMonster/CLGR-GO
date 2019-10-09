@@ -7,12 +7,8 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"../common"
 )
-
-type MatchedLine struct {
-	Num int     // 行号
-	Line string // 行内容
-}
 
 type TextSearcher struct {
 	IgnoreCase bool         // 忽略大小写
@@ -34,7 +30,7 @@ func IsTextFile(filename string) bool {
 	index := strings.LastIndex(filename, ".")
 	if index < 0 { return true }
 	suffix := filename[index:]
-	for _, item := range BINARY_FILES {
+	for _, item := range common.BINARY_FILES {
 		if strings.Compare(item, suffix) == 0 {
 			return false
 		}
@@ -42,7 +38,7 @@ func IsTextFile(filename string) bool {
 	return true
 }
 
-func (ts *TextSearcher)Search(keywords []string) (matchedLines []MatchedLine, err error) {
+func (ts *TextSearcher)Search(keywords []string) (matchedLines []common.MatchedLine, err error) {
 	tempKeywords := keywords
 	if ts.IgnoreCase && !ts.UseRegularMatch {
 		for i := 0; i < len(keywords); i++ {
@@ -76,13 +72,13 @@ func (ts *TextSearcher)Search(keywords []string) (matchedLines []MatchedLine, er
 			    if ts.MatchWholeWord {
 					leftIndex := index - 1
 					rightIndex := index + len(keyword)
-				    if leftIndex >= 0 && !strings.ContainsRune(SPLITE_CHARACTORS, rune(strLine[leftIndex])) { continue }
-					if rightIndex < len(strLine) && !strings.ContainsRune(SPLITE_CHARACTORS, rune(strLine[rightIndex])) { continue }
+				    if leftIndex >= 0 && !strings.ContainsRune(common.SPLITE_CHARACTORS, rune(strLine[leftIndex])) { continue }
+					if rightIndex < len(strLine) && !strings.ContainsRune(common.SPLITE_CHARACTORS, rune(strLine[rightIndex])) { continue }
 				}
 				isFound = true
 				break
 			}
-			if isFound { matchedLines = append(matchedLines, MatchedLine{lineCounter, string(line)}) }
+			if isFound { matchedLines = append(matchedLines, common.MatchedLine{lineCounter, string(line)}) }
 		}
 	}
 	if len(matchedLines) == 0 {

@@ -2,6 +2,8 @@ package main
 
 import (
 	"./search"
+	"./output"
+	"os"
 )
 
 func main() {
@@ -13,7 +15,8 @@ func main() {
 	useRegularMatch := false
 	ignoreFolderName := true
 
-	cs, _ := search.NewClgrSearcher()
+	op := output.New(os.Stdout, os.Stdout, output.Debug)
+	cs, _ := search.NewClgrSearcher(op)
 	cs.SetIgnoreCase(ignoreCase)
 	cs.SetMatchWholeWord(matchWholeWord)
 	cs.SetUseRegularMatch(useRegularMatch)

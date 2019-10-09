@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"os"
 	"strings"
+	"../common"
 )
 
 type FileSearcher struct {
@@ -16,15 +17,6 @@ type FileSearcher struct {
 
 func NewFileSearcher(ic bool, mww bool, urm bool, ifn bool, dd string) (*FileSearcher) {
 	return &FileSearcher{ic, mww, urm, ifn, dd}
-}
-
-func isSepareteCharactor(ch byte) bool {
-	for _, item := range SPLITE_CHARACTORS {
-		if ch == byte(item) {
-			return true
-		}
-	}
-	return false
 }
 
 func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err error) {
@@ -47,8 +39,8 @@ func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err err
 				if fs.MatchWholeWord {
 					leftIndex := index - 1
 					rightIndex := index + len(keyword)
-				    if leftIndex >= 0 && !strings.ContainsRune(SPLITE_CHARACTORS, rune(filename[leftIndex])) { continue }
-					if rightIndex < len(filename) && !strings.ContainsRune(SPLITE_CHARACTORS, rune(filename[rightIndex])) { continue }
+				    if leftIndex >= 0 && !strings.ContainsRune(common.SPLITE_CHARACTORS, rune(filename[leftIndex])) { continue }
+					if rightIndex < len(filename) && !strings.ContainsRune(common.SPLITE_CHARACTORS, rune(filename[rightIndex])) { continue }
 				}
 				isFound = true
 				break
