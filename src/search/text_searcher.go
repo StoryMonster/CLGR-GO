@@ -1,3 +1,4 @@
+
 package search
 
 import (
@@ -5,6 +6,7 @@ import (
 	"os"
 	"bufio"
 	"errors"
+	"fmt"
 )
 
 type MatchedLine struct {
@@ -27,9 +29,26 @@ func isInvalidByte(bt byte) bool {
 	return bt >= 0x00 && bt <= 0x08
 }
 
-func (ts *TextSearcher)Search(keyword string) (matchedLines []MatchedLine, err error) {
-	tempKeyword := keyword
-	if ts.IgnoreCase && !ts.UseRegularMatch { tempKeyword = strings.ToLower(tempKeyword) }
+func IsTextFile(filename string) bool {
+	// 仅从文件名的角度进行检查
+	index := strings.LastIndex(filename, ".")
+	if index < 0 { return true }
+	suffix := filename[index:]
+	for _, item := range BINARY_FILES {
+		if strings.Compare(item, suffix) == 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func (ts *TextSearcher)Search(keywords []string) (matchedLines []MatchedLine, err error) {
+	tempKeywords := keywords
+	if ts.IgnoreCase && !ts.UseRegularMatch {
+		for i := 0; i < len(keywords); i++ {
+			tempKeywords[i] = strings.ToLower(tempKeywords[i])
+		}
+	}
 
 	fd, err := os.Open(ts.DestFileName)
 	if err != nil { return  }
@@ -39,36 +58,35 @@ func (ts *TextSearcher)Search(keyword string) (matchedLines []MatchedLine, err e
 	for {
 		line, _, err := reader.ReadLine()
 		if err != nil { break }
+		isFound := false
 		lineCounter++
 		for _, ch := range line {
 			if isInvalidByte(ch) {
-				return matchedLines, errors.New("Read text from a binary file")
+				return matchedLines, errors.New(fmt.Sprintf("Read text from a binary file %s", ts.DestFileName))
 			}
 		}
 		if ts.UseRegularMatch {
 			// 正则匹配
-		    return matchedLines, nil
 		} else {
 			strLine := string(line)
 			if ts.IgnoreCase { strLine = strings.ToLower(strLine) }
-			index := strings.Index(strLine, tempKeyword)
-			if index < 0 { continue }
-			if ts.MatchWholeWord {
-				spliteChars := " -+_\\/><*&^%$#!@~`?[]{}()=|:;,."
-				leftIndex := index - 1
-				rightIndex := index + 1
-				if leftIndex > 0 {
-					if strings.IndexByte(spliteChars, strLine[leftIndex]) < 0 { continue }
+			for _, keyword := range tempKeywords {
+				index := strings.Index(strLine, keyword)
+			    if index < 0 { continue }
+			    if ts.MatchWholeWord {
+				    leftIndex := index - 1
+				    rightIndex := index + 1
+				    if leftIndex > 0 { if strings.IndexByte(SPLITE_CHARACTORS, strLine[leftIndex]) < 0 { continue } }
+				    if rightIndex < len(strLine) { if strings.IndexByte(SPLITE_CHARACTORS, strLine[rightIndex]) < 0 { continue } }
 				}
-				if rightIndex < len(strLine) {
-                    if strings.IndexByte(spliteChars, strLine[rightIndex]) < 0 { continue }
-				}
+				isFound = true
+				break
 			}
-			matchedLines = append(matchedLines, MatchedLine{lineCounter, string(line)})
+			if isFound { matchedLines = append(matchedLines, MatchedLine{lineCounter, string(line)}) }
 		}
 	}
 	if len(matchedLines) == 0 {
-		return matchedLines, errors.New("No text found!")
+		return matchedLines, errors.New(fmt.Sprintf("No matched line was found in %s!", ts.DestFileName))
 	}
 	return matchedLines, nil
 }
