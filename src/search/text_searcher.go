@@ -74,10 +74,8 @@ func (ts *TextSearcher)Search(keywords []string) (matchedLines []MatchedLine, er
 				index := strings.Index(strLine, keyword)
 			    if index < 0 { continue }
 			    if ts.MatchWholeWord {
-				    leftIndex := index - 1
-				    rightIndex := index + 1
-				    if leftIndex > 0 { if strings.IndexByte(SPLITE_CHARACTORS, strLine[leftIndex]) < 0 { continue } }
-				    if rightIndex < len(strLine) { if strings.IndexByte(SPLITE_CHARACTORS, strLine[rightIndex]) < 0 { continue } }
+				    if index - 1 >= 0 && !strings.ContainsRune(strLine, rune(strLine[index-1])) { continue }
+					if index + 1 < len(strLine) && !strings.ContainsRune(strLine, rune(strLine[index+1])) { continue }
 				}
 				isFound = true
 				break

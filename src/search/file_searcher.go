@@ -18,6 +18,15 @@ func NewFileSearcher(ic bool, mww bool, urm bool, ifn bool, dd string) (*FileSea
 	return &FileSearcher{ic, mww, urm, ifn, dd}
 }
 
+func isSepareteCharactor(ch byte) bool {
+	for _, item := range SPLITE_CHARACTORS {
+		if ch == byte(item) {
+			return true
+		}
+	}
+	return false
+}
+
 func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err error) {
 	tempKeywords := keywords
 	if !fs.UseRegularMatch && fs.IgnoreCase {
@@ -36,14 +45,8 @@ func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err err
 				index := strings.Index(filename, keyword)
 				if index < 0 { continue }
 				if fs.MatchWholeWord {
-					leftIndex := index - 1
-					rightIndex := index + 1
-					if leftIndex > 0 {
-						if strings.IndexByte(SPLITE_CHARACTORS, filename[leftIndex]) < 0 { continue }
-					}
-					if rightIndex < len(filename) {
-						if strings.IndexByte(SPLITE_CHARACTORS, filename[rightIndex]) < 0 { continue }
-					}
+					if index - 1 >= 0 && !strings.ContainsRune(filename, rune(filename[index-1])) { continue }
+					if index + 1 < len(filename) && !strings.ContainsRune(filename, rune(filename[index+1])) { continue }
 				}
 				isFound = true
 				break
