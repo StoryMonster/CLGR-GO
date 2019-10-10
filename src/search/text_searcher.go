@@ -67,26 +67,32 @@ func (ts *TextSearcher)Search(keywords []string) (matchedLines []common.MatchedL
 			matchedLines = append(matchedLines, common.MatchedLine{lineCounter, strLine})
 			continue
 		}
-		isFound := false
 		if ts.UseRegularMatch {
 			for _, reg := range regs {
 				if reg.MatchString(strLine) {
-					isFound = true
+					matchedLines = append(matchedLines, common.MatchedLine{lineCounter, string(line)})
 					break
 				}
 			}
 		} else {
 			if ts.IgnoreCase { strLine = strings.ToLower(strLine) }
 			for _, keyword := range tempKeywords {
-				// TODO 添加处理一行中有多个keyword的处理场景
-				index := strings.Index(strLine, keyword)
-				if index < 0 { continue }
-				isFound = true
-			    if ts.MatchWholeWord { isFound = common.IsWordWholeMatched(strLine, keyword, index) }
-				break
+				tempLine := strLine
+				isFound := false
+				for {
+					index := strings.Index(tempLine, keyword)
+				    if index < 0 { break }
+				    isFound = true
+					if ts.MatchWholeWord { isFound = common.IsWordWholeMatched(tempLine, keyword, index) }
+					if isFound { break }
+					tempLine = tempLine[index+len(keyword):]
+				}
+				if isFound {
+					matchedLines = append(matchedLines, common.MatchedLine{lineCounter, string(line)})
+					break
+				}
 			}
 		}
-		if isFound { matchedLines = append(matchedLines, common.MatchedLine{lineCounter, string(line)}) }
 	}
 	return matchedLines, nil
 }

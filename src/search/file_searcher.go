@@ -38,28 +38,29 @@ func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err err
 			matchedFiles = append(matchedFiles, path)
 			return err
 		}
-		isFound := false
 		if !fs.UseRegularMatch {
 			if fs.IgnoreCase {filename = strings.ToLower(filename) }
 			for _, keyword := range tempKeywords {
-				// TODO 添加处理一行中有多个keyword的处理场景
-				index := strings.Index(filename, keyword)
-				if index < 0 { continue }
-				isFound = true
-				if fs.MatchWholeWord { isFound = common.IsWordWholeMatched(filename, keyword, index) }
-				break
+				tempFilename := filename
+				for {
+					index := strings.Index(tempFilename, keyword)
+					if index < 0 { break }
+					isFound := true
+					if fs.MatchWholeWord { isFound = common.IsWordWholeMatched(tempFilename, keyword, index) }
+					if isFound {
+						matchedFiles = append(matchedFiles, path)
+						return nil
+					}
+					tempFilename = tempFilename[index+len(keyword):]
+				}
 			}
 		} else {
 			for i := 0; i < len(regs); i++ {
-				isMatched := regs[i].MatchString(filename)
-				if isMatched {
-					isFound = true
-					break
+				if regs[i].MatchString(filename) {
+					matchedFiles = append(matchedFiles, path)
+					return nil
 				}
 			}
-		}
-		if isFound {
-			matchedFiles = append(matchedFiles, path)
 		}
 		return err
 	})
