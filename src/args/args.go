@@ -22,14 +22,6 @@ type Args struct {
 	version string
 }
 
-const (
-	StringArray = 0
-	Bool = 1
-	Int = 2
-	String = 3
-)
-
-
 func New(name string, version string) *Args {
 	return &Args{"", make(map[string]Parameter), make(map[string]string), name, version}
 }
@@ -97,7 +89,7 @@ func (args *Args) AddParameter(key string, abbr string, defaultVals []string, de
 
 func (args *Args) Help() {
 	str := fmt.Sprintf("%s %s\n", args.name, args.version)
-	str += "==============================\n"
+	str += "======================================\n"
 	for _, param := range args.Parameters {
 		if len(param.DefaultVal) > 0 {
 			str += fmt.Sprintf("--%-20s  -%-5s  %-1s(default: %s)\n", param.Key, param.Abbr, param.Desc, param.DefaultVal[0])
