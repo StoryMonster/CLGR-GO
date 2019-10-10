@@ -79,7 +79,7 @@ func (ts *TextSearcher)Search(keywords []string) (matchedLines []common.MatchedL
 			for _, keyword := range tempKeywords {
 				tempLine := strLine
 				isFound := false
-				for {
+				for ; len(tempLine) > 0; {
 					index := strings.Index(tempLine, keyword)
 				    if index < 0 { break }
 				    isFound = true

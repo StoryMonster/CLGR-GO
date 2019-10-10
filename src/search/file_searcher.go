@@ -32,6 +32,7 @@ func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err err
 	}
 
 	filepath.Walk(fs.DestDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil { return err }
 		if fs.IgnoreFolderName && info.IsDir() { return err }
 		filename := info.Name()
 		if len(tempKeywords) == 0 {
@@ -42,14 +43,14 @@ func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err err
 			if fs.IgnoreCase {filename = strings.ToLower(filename) }
 			for _, keyword := range tempKeywords {
 				tempFilename := filename
-				for {
+				for ; len(tempFilename) > 0;{
 					index := strings.Index(tempFilename, keyword)
 					if index < 0 { break }
 					isFound := true
 					if fs.MatchWholeWord { isFound = common.IsWordWholeMatched(tempFilename, keyword, index) }
 					if isFound {
 						matchedFiles = append(matchedFiles, path)
-						return nil
+						return err
 					}
 					tempFilename = tempFilename[index+len(keyword):]
 				}
@@ -58,7 +59,7 @@ func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err err
 			for i := 0; i < len(regs); i++ {
 				if regs[i].MatchString(filename) {
 					matchedFiles = append(matchedFiles, path)
-					return nil
+					return err
 				}
 			}
 		}
