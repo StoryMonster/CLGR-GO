@@ -33,6 +33,7 @@ func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err err
 			if fs.IgnoreFolderName && info.IsDir() { return err }
 			filename := info.Name()
 			if fs.IgnoreCase {filename = strings.ToLower(filename) }
+			if len(tempKeywords) == 0 { isFound = true}
 			for _, keyword := range tempKeywords {
 				index := strings.Index(filename, keyword)
 				if index < 0 { continue }
@@ -48,7 +49,9 @@ func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err err
 		} else {
 			// TODO 正则匹配
 		}
-		if isFound { matchedFiles = append(matchedFiles, path) }
+		if isFound {
+			matchedFiles = append(matchedFiles, path)
+		}
 		return err
 	})
 	err = nil

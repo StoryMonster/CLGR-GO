@@ -5,8 +5,6 @@ import (
 	"strings"
 	"os"
 	"bufio"
-	"errors"
-	"fmt"
 	"../common"
 )
 
@@ -26,6 +24,10 @@ func isInvalidByte(bt byte) bool {
 }
 
 func IsTextFile(filename string) bool {
+	info, err := os.Stat(filename)
+	if err != nil { return false }
+	if info.IsDir() { return false }
+
 	// 仅从文件名的角度进行检查
 	index := strings.LastIndex(filename, ".")
 	if index < 0 { return true }
@@ -58,7 +60,7 @@ func (ts *TextSearcher)Search(keywords []string) (matchedLines []common.MatchedL
 		lineCounter++
 		for _, ch := range line {
 			if isInvalidByte(ch) {
-				return matchedLines, errors.New(fmt.Sprintf("Read text from a binary file %s", ts.DestFileName))
+				return []common.MatchedLine{}, nil
 			}
 		}
 		if ts.UseRegularMatch {
@@ -66,6 +68,7 @@ func (ts *TextSearcher)Search(keywords []string) (matchedLines []common.MatchedL
 		} else {
 			strLine := string(line)
 			if ts.IgnoreCase { strLine = strings.ToLower(strLine) }
+			if len(tempKeywords) == 0 { isFound = true }
 			for _, keyword := range tempKeywords {
 				index := strings.Index(strLine, keyword)
 			    if index < 0 { continue }
@@ -80,9 +83,6 @@ func (ts *TextSearcher)Search(keywords []string) (matchedLines []common.MatchedL
 			}
 			if isFound { matchedLines = append(matchedLines, common.MatchedLine{lineCounter, string(line)}) }
 		}
-	}
-	if len(matchedLines) == 0 {
-		return matchedLines, errors.New(fmt.Sprintf("No matched line was found in %s!", ts.DestFileName))
 	}
 	return matchedLines, nil
 }

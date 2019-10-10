@@ -27,22 +27,22 @@ func New(logWriter io.Writer, resWriter io.Writer, level int) *Output {
 }
 
 func (op *Output) DEBUG(str string) {
-	if op.level < Debug { return }
+	if op.level > Debug { return }
     op.write("[DEBUG] " + str)
 }
 
 func (op *Output) INFO(str string) {
-	if op.level < Info { return }
+	if op.level > Info { return }
     op.write("[INFO] " + str)
 }
 
 func (op *Output) WARN(str string) {
-	if op.level < Warn { return }
+	if op.level > Warn { return }
     op.write("[WARN] " + str)
 }
 
 func (op *Output) ERROR(str string) {
-	if op.level < Error { return }
+	if op.level > int(Error) { return }
     op.write("[ERROR] " + str)
 }
 

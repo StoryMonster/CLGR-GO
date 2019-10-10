@@ -3,6 +3,8 @@ package search
 import (
 	"fmt"
 	"../output"
+	"os"
+	"sync"
 )
 
 type ClgrSearcher struct {
@@ -28,8 +30,7 @@ func NewClgrSearcher(op *output.Output)(*ClgrSearcher, error) {
 }
 
 func (cs *ClgrSearcher)Search() {
-	isTextSearch := len(cs.TargetKeywords) > 0
-	if !isTextSearch {
+	if len(cs.TargetKeywords) == 0 {
 		cs.searchFiles()
 	} else {
 		cs.searchTexts()
@@ -55,8 +56,9 @@ func (cs *ClgrSearcher)searchFiles() {
 }
 
 func (cs *ClgrSearcher)searchTexts() {
+	var wg sync.WaitGroup
 	for _, dir := range cs.DestDirs {
-		fs := NewFileSearcher(true, false, cs.UseRegularMatch, cs.IgnoreFolderName, dir)  // 文本搜索时，文件名匹配不考虑大小写以及全字匹配
+		fs := NewFileSearcher(true, false, cs.UseRegularMatch, true, dir)  // 文本搜索时，文件名匹配不考虑大小写以及全字匹配
 		filenames, err := fs.Search(cs.DestFiles)
 		if err != nil {
 			cs.op.ERROR(err.Error())
@@ -68,25 +70,30 @@ func (cs *ClgrSearcher)searchTexts() {
 		}
 		for _, filename := range filenames {
 			if IsTextFile(filename) {
-				ts := NewTextSearcher(cs.IgnoreCase, cs.MatchWholeWord, cs.UseRegularMatch, filename)
-			    go cs.searchTextsInFile(ts, cs.TargetKeywords)
+				wg.Add(1)
+				go cs.searchTextsInFile(&wg, filename)
 			} else {
-				cs.op.WARN(fmt.Sprintf("%s is a binary file", filename))
+				cs.op.WARN(fmt.Sprintf("%s is not a text file", filename))
 			}
 		}
 	}
+	wg.Wait()
 }
 
-func (cs *ClgrSearcher)searchTextsInFile(ts *TextSearcher, keywords []string) {
+func (cs *ClgrSearcher)searchTextsInFile(wg *sync.WaitGroup, filename string) {
+	defer wg.Done()
+	keywords := cs.TargetKeywords
+	ts := NewTextSearcher(cs.IgnoreCase, cs.MatchWholeWord, cs.UseRegularMatch, filename)
 	matchedLines, err := ts.Search(keywords)
 	if err != nil {
-		cs.op.ERROR(fmt.Sprintf("%s", err.Error()))
+		cs.op.ERROR(err.Error())
 		return
 	}
 	if len(matchedLines) == 0 {
 		return
 	}
 	cs.op.AddTextSearchResult(ts.DestFileName, matchedLines)
+	return
 }
 
 func (cs *ClgrSearcher)SetIgnoreCase(val bool) {
@@ -105,14 +112,21 @@ func (cs *ClgrSearcher)SetIgnoreFolderName(val bool) {
     cs.IgnoreFolderName = val
 }
 
-func (cs *ClgrSearcher)SetDestinationDirectors(paths []string) {
-	cs.DestDirs = paths
+func (cs *ClgrSearcher)SetDestinationDirectors(dirs []string) {
+	for _, dir := range dirs {
+		_, err := os.Stat(dir)
+        if err == nil || os.IsExist(err) {
+			cs.DestDirs = append(cs.DestDirs, dir)
+		} else {
+			panic(fmt.Sprintf("%s is not exist!", dir))
+		}
+	}
 }
 
-func (cs *ClgrSearcher)SetTargetKeywords(paths []string) {
-	cs.TargetKeywords = paths
+func (cs *ClgrSearcher)SetTargetKeywords(keywords []string) {
+	cs.TargetKeywords = keywords
 }
 
-func (cs *ClgrSearcher)SetDestinationFiles(paths []string) {
-	cs.DestFiles = paths
+func (cs *ClgrSearcher)SetDestinationFiles(filekeywords []string) {
+	cs.DestFiles = filekeywords
 }
