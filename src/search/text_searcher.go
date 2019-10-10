@@ -6,6 +6,7 @@ import (
 	"os"
 	"bufio"
 	"../common"
+	"regexp"
 )
 
 type TextSearcher struct {
@@ -42,8 +43,11 @@ func IsTextFile(filename string) bool {
 
 func (ts *TextSearcher)Search(keywords []string) (matchedLines []common.MatchedLine, err error) {
 	tempKeywords := keywords
-	if ts.IgnoreCase && !ts.UseRegularMatch {
-		for i := 0; i < len(keywords); i++ {
+	regs := make([]*regexp.Regexp, len(keywords))
+	for i := 0; i < len(keywords); i++ {
+		if ts.UseRegularMatch {
+			regs[i], _ = regexp.Compile(keywords[i])
+		} else if ts.IgnoreCase {
 			tempKeywords[i] = strings.ToLower(tempKeywords[i])
 		}
 	}
@@ -56,33 +60,33 @@ func (ts *TextSearcher)Search(keywords []string) (matchedLines []common.MatchedL
 	for {
 		line, _, err := reader.ReadLine()
 		if err != nil { break }
-		isFound := false
 		lineCounter++
-		for _, ch := range line {
-			if isInvalidByte(ch) {
-				return []common.MatchedLine{}, nil
-			}
+		for _, ch := range line { if isInvalidByte(ch) { return []common.MatchedLine{}, nil } }
+		strLine := string(line)
+		if len(keywords) == 0 {
+			matchedLines = append(matchedLines, common.MatchedLine{lineCounter, strLine})
+			continue
 		}
+		isFound := false
 		if ts.UseRegularMatch {
-			// 正则匹配
-		} else {
-			strLine := string(line)
-			if ts.IgnoreCase { strLine = strings.ToLower(strLine) }
-			if len(tempKeywords) == 0 { isFound = true }
-			for _, keyword := range tempKeywords {
-				index := strings.Index(strLine, keyword)
-			    if index < 0 { continue }
-			    if ts.MatchWholeWord {
-					leftIndex := index - 1
-					rightIndex := index + len(keyword)
-				    if leftIndex >= 0 && !strings.ContainsRune(common.SPLITE_CHARACTORS, rune(strLine[leftIndex])) { continue }
-					if rightIndex < len(strLine) && !strings.ContainsRune(common.SPLITE_CHARACTORS, rune(strLine[rightIndex])) { continue }
+			for _, reg := range regs {
+				if reg.MatchString(strLine) {
+					isFound = true
+					break
 				}
+			}
+		} else {
+			if ts.IgnoreCase { strLine = strings.ToLower(strLine) }
+			for _, keyword := range tempKeywords {
+				// TODO 添加处理一行中有多个keyword的处理场景
+				index := strings.Index(strLine, keyword)
+				if index < 0 { continue }
 				isFound = true
+			    if ts.MatchWholeWord { isFound = common.IsWordWholeMatched(strLine, keyword, index) }
 				break
 			}
-			if isFound { matchedLines = append(matchedLines, common.MatchedLine{lineCounter, string(line)}) }
 		}
+		if isFound { matchedLines = append(matchedLines, common.MatchedLine{lineCounter, string(line)}) }
 	}
 	return matchedLines, nil
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"../common"
+	"regexp"
 )
 
 type FileSearcher struct {
@@ -21,33 +22,41 @@ func NewFileSearcher(ic bool, mww bool, urm bool, ifn bool, dd string) (*FileSea
 
 func (fs *FileSearcher)Search(keywords []string) (matchedFiles []string, err error) {
 	tempKeywords := keywords
-	if !fs.UseRegularMatch && fs.IgnoreCase {
-		for i := 0; i < len(keywords); i++ {
+	regs := make([]*regexp.Regexp, len(keywords))
+	for i := 0; i < len(keywords); i++ {
+		if !fs.UseRegularMatch && fs.IgnoreCase {
 			tempKeywords[i] = strings.ToLower(tempKeywords[i])
+		} else {
+			regs[i], _ = regexp.Compile(tempKeywords[i])
 		}
 	}
 
 	filepath.Walk(fs.DestDir, func(path string, info os.FileInfo, err error) error {
+		if fs.IgnoreFolderName && info.IsDir() { return err }
+		filename := info.Name()
+		if len(tempKeywords) == 0 {
+			matchedFiles = append(matchedFiles, path)
+			return err
+		}
 		isFound := false
 		if !fs.UseRegularMatch {
-			if fs.IgnoreFolderName && info.IsDir() { return err }
-			filename := info.Name()
 			if fs.IgnoreCase {filename = strings.ToLower(filename) }
-			if len(tempKeywords) == 0 { isFound = true}
 			for _, keyword := range tempKeywords {
+				// TODO 添加处理一行中有多个keyword的处理场景
 				index := strings.Index(filename, keyword)
 				if index < 0 { continue }
-				if fs.MatchWholeWord {
-					leftIndex := index - 1
-					rightIndex := index + len(keyword)
-				    if leftIndex >= 0 && !strings.ContainsRune(common.SPLITE_CHARACTORS, rune(filename[leftIndex])) { continue }
-					if rightIndex < len(filename) && !strings.ContainsRune(common.SPLITE_CHARACTORS, rune(filename[rightIndex])) { continue }
-				}
 				isFound = true
+				if fs.MatchWholeWord { isFound = common.IsWordWholeMatched(filename, keyword, index) }
 				break
 			}
 		} else {
-			// TODO 正则匹配
+			for i := 0; i < len(regs); i++ {
+				isMatched := regs[i].MatchString(filename)
+				if isMatched {
+					isFound = true
+					break
+				}
+			}
 		}
 		if isFound {
 			matchedFiles = append(matchedFiles, path)
