@@ -73,7 +73,7 @@ func (op *Output) AddTextSearchResult(filename string, lines []common.MatchedLin
 func (op *Output) SearchConclusion() {
 	str := fmt.Sprintf("Search End! Matched files: %d", op.matchedFilesNum)
 	if op.matchedLinesNum > 0 {
-		str += fmt.Sprintf("  Matched lines: ", op.matchedLinesNum)
+		str += fmt.Sprintf("  Matched lines: %d", op.matchedLinesNum)
 	}
 	op.RESULT(str)
 }
