@@ -13,7 +13,7 @@ func readCmdParameters() *args.Args {
 	arg.AddParameter("file", "f", []string {}, "File search keyword, multiple file can be used.")
 	arg.AddParameter("dir", "d", []string {"."}, "Specify the search directory, multiple dir can be used.")
 	arg.AddParameter("ignorecase", "ic", []string {"false"}, "Ignore the alphabet case.")
-	arg.AddParameter("matchwholeword", "mwc", []string {"false"}, "Match the whole word in a line or a filename when search.")
+	arg.AddParameter("matchwholeword", "mww", []string {"false"}, "Match the whole word in a line or a filename when search.")
 	arg.AddParameter("ignorefoldername", "ifn", []string {"false"}, "Ignore the name of folder when do search for files.")
 	arg.AddParameter("regular", "r", []string {"false"}, "Use regular expression to do match")
 	arg.Parse()
