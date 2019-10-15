@@ -18,12 +18,14 @@ type Output struct {
 	logger *log.Logger
 	result *log.Logger
 	level int
+	matchedFilesNum int    // 搜索到的匹配文件数量（包含文件夹名搜索结果）
+	matchedLinesNum int    // 搜索到的匹配文本行数（仅文本搜索有效）
 }
 
 func New(logWriter io.Writer, resWriter io.Writer, level int) *Output {
 	logger := log.New(logWriter, "[CLGR]", log.Ldate | log.Ltime)
 	result := log.New(resWriter, "", 0)
-	return &Output{logger, result, level}
+	return &Output{logger, result, level, 0, 0}
 }
 
 func (op *Output) DEBUG(str string) {
@@ -52,15 +54,26 @@ func (op *Output) RESULT(str string) {
 }
 
 func (op *Output) AddFileSearchResult(filepath string) {
-	// XXX 此处添加逻辑以获取文件查找结果
+	op.matchedFilesNum++
+	// XXX 此处添加逻辑以输出文件查找结果
     op.RESULT(filepath)
 }
 
 func (op *Output) AddTextSearchResult(filename string, lines []common.MatchedLine) {
-	// XXX 此处用于添加自定义逻辑以获取文本搜索结果
+	op.matchedFilesNum++
+	op.matchedLinesNum += len(lines)
+	// XXX 此处用于添加自定义逻辑以输出文本搜索结果
 	str := fmt.Sprintf(">>>%s:\n", filename)
 	for _, line := range lines {
 		str += fmt.Sprintf("%d: %s\n", line.Num, line.Line)
+	}
+	op.RESULT(str)
+}
+
+func (op *Output) SearchConclusion() {
+	str := fmt.Sprintf("Search End! Matched files: %d", op.matchedFilesNum)
+	if op.matchedLinesNum > 0 {
+		str += fmt.Sprintf("  Matched lines: ", op.matchedLinesNum)
 	}
 	op.RESULT(str)
 }

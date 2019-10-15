@@ -35,6 +35,7 @@ func (cs *ClgrSearcher)Search() {
 	} else {
 		cs.searchTexts()
 	}
+	cs.op.SearchConclusion()
 }
 
 func (cs *ClgrSearcher)searchFiles() {
