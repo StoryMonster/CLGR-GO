@@ -54,7 +54,7 @@ func (cs *ClgrSearcher)searchFiles() {
 			continue
 		}
 		for _, filename := range filenames {
-			cs.op.AddFileSearchResult(filename)
+			cs.op.GetAFileSearchResult(filename)
 		}
 	}
 }
@@ -96,7 +96,7 @@ func (cs *ClgrSearcher)searchTextsInFile(wg *sync.WaitGroup, filename string) {
 	if len(matchedLines) == 0 {
 		return
 	}
-	cs.op.AddTextSearchResult(ts.DestFileName, matchedLines)
+	cs.op.GetATextSearchResult(ts.DestFileName, matchedLines)
 	return
 }
 

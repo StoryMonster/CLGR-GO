@@ -22,12 +22,12 @@ func (do *DefaultOutput) write(str string) {
 	do.writer.Write([]byte(str))
 }
 
-func (do *DefaultOutput) AddFileSearchResult(filepath string) {
+func (do *DefaultOutput) GetAFileSearchResult(filepath string) {
 	do.matchedFilesNum++
 	do.writer.Write([]byte(filepath+"\n"))
 }
 
-func (do *DefaultOutput) AddTextSearchResult(filename string, lines []common.MatchedLine) {
+func (do *DefaultOutput) GetATextSearchResult(filename string, lines []common.MatchedLine) {
 	do.matchedFilesNum++
 	do.matchedLinesNum += len(lines)
 
