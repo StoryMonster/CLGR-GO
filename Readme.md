@@ -47,3 +47,7 @@ type Result interface {
 }
 ```
 
+## 如何直接使用clgr
+```
+下载工程中bin/clgr.exe，部署到环境变量PATH下，即可直接使用
+```
