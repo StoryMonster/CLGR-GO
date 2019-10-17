@@ -2,9 +2,11 @@ package search
 
 import (
 	"fmt"
-	"../output"
 	"os"
 	"sync"
+	"../output"
+	"../logger"
+	"../args"
 )
 
 type ClgrSearcher struct {
@@ -15,7 +17,8 @@ type ClgrSearcher struct {
 	DestDirs []string               // 搜索路径集合，路径必须完全正确
 	DestFiles []string              // 文件名关键字集合
 	TargetKeywords []string         // 仅用于文本搜索，作为文本搜索关键字集合
-	op *output.Output
+	logger *logger.Logger
+	op output.Result
 }
 
 type TextSearchOptions struct {
@@ -25,8 +28,8 @@ type TextSearchOptions struct {
 	DestFileName string     // 待搜索文件名
 }
 
-func NewClgrSearcher(op *output.Output)(*ClgrSearcher, error) {
-	return &ClgrSearcher{false, false, false, false, make([]string, 0), make([]string, 0), make([]string, 0), op}, nil
+func NewClgrSearcher(logger *logger.Logger, op output.Result)(*ClgrSearcher, error) {
+	return &ClgrSearcher{false, false, false, false, make([]string, 0), make([]string, 0), make([]string, 0), logger, op}, nil
 }
 
 func (cs *ClgrSearcher)Search() {
@@ -43,11 +46,11 @@ func (cs *ClgrSearcher)searchFiles() {
 		fs := NewFileSearcher(cs.IgnoreCase, cs.MatchWholeWord, cs.UseRegularMatch, cs.IgnoreFolderName, dir)
 		filenames, err := fs.Search(cs.DestFiles)
 		if err != nil {
-			cs.op.ERROR(err.Error())
+			cs.logger.ERROR(err.Error())
 			continue
 		}
 		if len(filenames) == 0 {
-			cs.op.WARN(fmt.Sprintf("No files found under %s", dir))
+			cs.logger.WARN(fmt.Sprintf("No files found under %s", dir))
 			continue
 		}
 		for _, filename := range filenames {
@@ -62,11 +65,11 @@ func (cs *ClgrSearcher)searchTexts() {
 		fs := NewFileSearcher(true, false, cs.UseRegularMatch, true, dir)  // 文本搜索时，文件名匹配不考虑大小写以及全字匹配
 		filenames, err := fs.Search(cs.DestFiles)
 		if err != nil {
-			cs.op.ERROR(err.Error())
+			cs.logger.ERROR(err.Error())
 			continue
 		}
 		if len(filenames) == 0 {
-			cs.op.WARN(fmt.Sprintf("No files found under %s", dir))
+			cs.logger.WARN(fmt.Sprintf("No files found under %s", dir))
 			continue
 		}
 		for _, filename := range filenames {
@@ -74,7 +77,7 @@ func (cs *ClgrSearcher)searchTexts() {
 				wg.Add(1)
 				go cs.searchTextsInFile(&wg, filename)
 			} else {
-				cs.op.WARN(fmt.Sprintf("%s is not a text file", filename))
+				cs.logger.WARN(fmt.Sprintf("%s is not a text file", filename))
 			}
 		}
 	}
@@ -87,7 +90,7 @@ func (cs *ClgrSearcher)searchTextsInFile(wg *sync.WaitGroup, filename string) {
 	ts := NewTextSearcher(cs.IgnoreCase, cs.MatchWholeWord, cs.UseRegularMatch, filename)
 	matchedLines, err := ts.Search(keywords)
 	if err != nil {
-		cs.op.ERROR(err.Error())
+		cs.logger.ERROR(err.Error())
 		return
 	}
 	if len(matchedLines) == 0 {
@@ -130,4 +133,14 @@ func (cs *ClgrSearcher)SetTargetKeywords(keywords []string) {
 
 func (cs *ClgrSearcher)SetDestinationFiles(filekeywords []string) {
 	cs.DestFiles = filekeywords
+}
+
+func (cs *ClgrSearcher)SetFromArgs(args *args.Args) {
+	cs.SetUseRegularMatch(args.Parameters["regular"].IsExist)
+	cs.SetIgnoreCase(args.Parameters["ignorecase"].IsExist)
+	cs.SetMatchWholeWord(args.Parameters["matchwholeword"].IsExist)
+	cs.SetIgnoreFolderName(args.Parameters["ignorefoldername"].IsExist)
+	cs.SetDestinationDirectors(args.ReadValue("dir"))
+	cs.SetTargetKeywords(args.ReadValue("text"))
+	cs.SetDestinationFiles(args.ReadValue("file"))
 }

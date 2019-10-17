@@ -20,10 +20,11 @@ type Args struct {
 	abbrs map[string]string      // key: 简写   val: 全拼
 	name string
 	version string
+	examples []string
 }
 
 func New(name string, version string) *Args {
-	return &Args{"", make(map[string]Parameter), make(map[string]string), name, version}
+	return &Args{"", make(map[string]Parameter), make(map[string]string), name, version, []string{}}
 }
 
 func (args *Args) ReadValue(key string) []string {
@@ -87,6 +88,11 @@ func (args *Args) AddParameter(key string, abbr string, defaultVals []string, de
 	args.abbrs[abbr] = key
 }
 
+func (args *Args) AddExample(example string, notice string) {
+	str := fmt.Sprintf("%-40s %s", example, notice)
+	args.examples = append(args.examples, str)
+}
+
 func (args *Args) Help() {
 	str := fmt.Sprintf("%s %s\n", args.name, args.version)
 	str += "======================================\n"
@@ -96,6 +102,12 @@ func (args *Args) Help() {
 		} else {
 			str += fmt.Sprintf("--%-20s  -%-5s  %-1s\n", param.Key, param.Abbr, param.Desc)
 		}
+	}
+	if len(args.examples) > 0 {
+		str += "---------------examples-----------------\n"
+	}
+	for _, example := range args.examples {
+		str += example + "\n"
 	}
 	fmt.Println(str)
 }
